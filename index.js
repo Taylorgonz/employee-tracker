@@ -51,20 +51,23 @@ const init = () => {
 
         })
 
-
 }
 
 // query for viewing employees
 
 const viewEmployees = () => {
-    const query = client.query('SELECT * FROM employee',
+    const query = client.query("SELECT e.id, e.first_name, e.last_name,r.title, d.name department, salary, Concat(m.first_name, ' ',m.last_name) manager FROM employee e INNER JOIN role r ON e.role_id = r.id INNER JOIN department d on r.department_id = d.id LEFT JOIN employee m on m.id = e.manager_id ",
         (err, res) => {
             if (err) throw err;
-            console.table(res);
-            init();
-        })
-    console.log('---------------------------------');
+            console.table(res)
+            // res.forEach(({ id, first_name, last_name, title, department, salary, manager }) => {
+            // console.table(`${id}  ${first_name}  ${last_name}  ${title}  ${department}  ${salary}  ${manager}`);
 
+            // })
+            init();
+            console.log('---------------------------------');
+        }
+    )
 }
 // view all roles
 const viewRoles = () => {
@@ -78,7 +81,7 @@ const viewRoles = () => {
 
 }
 // view all department
-const viewRoles = () => {
+const viewDepartments = () => {
     const query = client.query('SELECT * FROM department',
         (err, res) => {
             if (err) throw err;
@@ -91,7 +94,7 @@ const viewRoles = () => {
 
 // query to add employee
 const addEmployee = () => {
-    client.query("SELECT * FROM role", (err, res) => {
+    client.query("SELECT e.id, r.id, Concat(first_name, ' ', last_name) manager, title  FROM employee e, role r", (err, res) => {
         inquirer
             .prompt([
                 {
@@ -105,9 +108,9 @@ const addEmployee = () => {
                     name: 'lastName',
                 },
                 {
-                    type: 'rawlist',
-                    message: 'Which employee would you like to update?',
-                    name: 'choice',
+                    type: 'list',
+                    message: 'What is the employees role?',
+                    name: 'role',
                     choices() {
                         const choicesArray = [];
                         res.forEach(({ title }) => {
@@ -116,14 +119,37 @@ const addEmployee = () => {
                         return choicesArray
                     },
                 },
+                {
+                    type: 'list',
+                    message: 'who is the employee\'s manager?',
+                    name: 'manager',
+                    choices() {
+                        const choicesArray = [none];
+                        res.forEach(({ manager}) => {
+                            choicesArray.push(manager);
+                        })
+                        return choicesArray
+                    },
+                },
             ]).then((answers) => {
+                let roleItem;
+                let managerItem;
+                res.forEach((item) => {
+                    if (item.title === answers.role) {
+                        roleItem = item.id;
+                    }
+                    if (item.manager === answers.manager) {
+                        managerItem = item.id
+                    }
+                })
 
                 const query = client.query(
                     'INSERT INTO employee SET ?',
                     {
                         first_name: answers.firstName,
                         last_name: answers.lastName,
-                        role_id: answers.choice,
+                        role_id: roleItem,
+                        manager_id: managerItem
                     },
                     (err, res) => {
                         if (err) throw err;
@@ -140,47 +166,54 @@ const addEmployee = () => {
 
 const addRole = () => {
     client.query("SELECT * FROM department", (err, res) => {
-    inquirer
-        .prompt([
-            {
-                type: 'input',
-                message: 'Title of this role',
-                name: 'title',
-            },
-            {
-                type: 'input',
-                message: 'salary',
-                name: 'lastName',
-            },
-            {
-                type: 'list',
-                message: 'Which employee would you like to update?',
-                name: 'choice',
-                choices() {
-                    const choicesArray = [];
-                    res.forEach(({ name, id }) => {
-                        choicesArray.push({name, id});
-                    })
-                    return choicesArray
-                },
-            },
-        ]).then((answers) => {
-
-            const query = client.query(
-                'INSERT INTO role SET ?',
+        inquirer
+            .prompt([
                 {
-                    title: answers.title,
-                    salary: answers.salary,
-                    departmen_id: answers.choice,
+                    type: 'input',
+                    message: 'Title of this role',
+                    name: 'title',
                 },
-                (err, res) => {
-                    if (err) throw err;
-                    console.log(`${res.affectedRows} updated!\n`)
-                    init();
-                })
-            console.log('---------------------------------');
+                {
+                    type: 'input',
+                    message: 'What is the salary of this role',
+                    name: 'salary',
+                },
+                {
+                    type: 'list',
+                    message: 'Which employee would you like to update?',
+                    name: 'choice',
+                    choices() {
+                        const choicesArray = [];
+                        res.forEach(({ name }) => {
+                            choicesArray.push({ name });
+                        })
+                        return choicesArray
+                    },
+                },
+            ]).then((answers) => {
 
-        })
+                let chosenItem;
+                res.forEach((item) => {
+                    if (item.name === answers.choice) {
+                        chosenItem = item.id;
+                    }
+                })
+                console.log(chosenItem);
+                const query = client.query(
+                    'INSERT INTO role SET ?',
+                    {
+                        title: answers.title,
+                        salary: answers.salary,
+                        department_id: chosenItem,
+                    },
+                    (err, res) => {
+                        if (err) throw err;
+                        console.log(`${res.affectedRows} updated!\n`)
+                        init();
+                    })
+                console.log('---------------------------------');
+
+            })
     })
 };
 // add department
@@ -212,45 +245,54 @@ const addDepartment = () => {
 }
 
 const updateEmployee = () => {
-    client.query("SELECT * FROM employee", (err, res) => {
+    client.query("SELECT e.first_name, r.id, r.title FROM employee e, role r", (err, res) => {
         if (err) throw err;
 
         inquirer
             .prompt([
                 {
-                    type: 'rawlist',
+                    type: 'list',
                     message: 'Which employee would you like to update?',
-                    name: 'choice',
+                    name: 'firstName',
                     choices() {
-                        const choicesArray = [];
+                        const nameArray = [];
                         res.forEach(({ first_name }) => {
-                            choicesArray.push(first_name);
+                            nameArray.push(first_name);
                         })
-                        return choicesArray
+                        return nameArray
                     },
                 },
 
                 {
-                    type: 'input',
-                    message: 'Employee\'s updated last name',
-                    name: 'lastName',
+                    type: 'list',
+                    message: 'What is their new role?',
+                    name: 'choice',
+                    choices() {
+                        const choicesArray = [];
+                        res.forEach(({ title }) => {
+                            choicesArray.push(title);
+                        })
+                        return choicesArray
+                    },
                 },
-
             ]).then((answers) => {
                 let chosenItem;
                 res.forEach((item) => {
-                    if (item.first_name === answers.choice) {
-                        chosenItem = item;
+                    if (item.title === answers.choice) {
+                        chosenItem = item.id;
                     }
                 })
-                client.query(
-                    'INSERT INTO employee SET ? WHERE ?',
-                    {
-                        last_name: answers.lastName,
-                    },
-                    {
-                        first_name: chosenItem,
-                    },
+                console.log(chosenItem);
+                const query = client.query(
+                    'UPDATE employee SET ? WHERE ?',
+                    [
+                        {
+                            role_id: chosenItem,
+                        },
+                        {
+                            first_name: answers.firstName,
+                        },
+                    ],
                     (err, res) => {
                         if (err)
                             throw err;

@@ -3,7 +3,8 @@ CREATE database employee_trackerdb;
 USE employee_trackerdb;
 CREATE TABLE department (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(30),
+    name 
+    (30),
     PRIMARY KEY (id)
 );
 CREATE TABLE role (
