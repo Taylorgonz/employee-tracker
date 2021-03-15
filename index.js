@@ -16,7 +16,7 @@ const init = () => {
                 type: 'list',
                 name: 'action',
                 message: 'What would you like to do?',
-                choices: ['View all employees', 'View all departments', 'View all roles', 'Add employee', 'Add department', 'Add role', 'Update employee role', 'Done']
+                choices: ['View all employees', 'View all departments', 'View all roles', 'Add employee', 'Add department', 'Add role', 'Update employee role', 'Delete employee', 'Done']
             }
         ]).then((answers) => {
             switch (answers.action) {
@@ -41,6 +41,9 @@ const init = () => {
                     break;
                 case 'Update employee role':
                     updateEmployee();
+                    break;
+                case 'Delete employee':
+                    deleteEmployee();
                     break;
                 case 'Done':
                     client.end();
@@ -94,7 +97,16 @@ const viewDepartments = () => {
 
 // query to add employee
 const addEmployee = () => {
-    client.query("SELECT e.id, r.id, Concat(first_name, ' ', last_name) manager, title  FROM employee e, role r", (err, res) => {
+    client.query("SELECT e.id id, r.id roleid, Concat(first_name, ' ', last_name) manager, title FROM employee e, role r ",
+     (err, res) => {
+         const rolesArray=[];
+         const managerArray=['None'];
+         res.forEach((item) =>{
+             role = item.title;
+             manager = item.manager;
+             rolesArray.push(role);
+             managerArray.push(manager);
+         })
         inquirer
             .prompt([
                 {
@@ -111,34 +123,23 @@ const addEmployee = () => {
                     type: 'list',
                     message: 'What is the employees role?',
                     name: 'role',
-                    choices() {
-                        const choicesArray = [];
-                        res.forEach(({ title }) => {
-                            choicesArray.push(title);
-                        })
-                        return choicesArray
-                    },
+                    choices: rolesArray,
                 },
                 {
                     type: 'list',
                     message: 'who is the employee\'s manager?',
                     name: 'manager',
-                    choices() {
-                        const choicesArray = [none];
-                        res.forEach(({ manager}) => {
-                            choicesArray.push(manager);
-                        })
-                        return choicesArray
-                    },
+                    choices: managerArray,
                 },
             ]).then((answers) => {
+
                 let roleItem;
                 let managerItem;
                 res.forEach((item) => {
                     if (item.title === answers.role) {
-                        roleItem = item.id;
+                        roleItem = item.roleid;
                     }
-                    if (item.manager === answers.manager) {
+                    if (item.manager  == answers.manager) {
                         managerItem = item.id
                     }
                 })
@@ -180,14 +181,14 @@ const addRole = () => {
                 },
                 {
                     type: 'list',
-                    message: 'Which employee would you like to update?',
+                    message: 'Which department is this role in?',
                     name: 'choice',
                     choices() {
                         const choicesArray = [];
                         res.forEach(({ name }) => {
                             choicesArray.push({ name });
                         })
-                        return choicesArray
+                        return choicesArray;
                     },
                 },
             ]).then((answers) => {
@@ -259,7 +260,7 @@ const updateEmployee = () => {
                         res.forEach(({ first_name }) => {
                             nameArray.push(first_name);
                         })
-                        return nameArray
+                        return nameArray;
                     },
                 },
 
@@ -272,7 +273,7 @@ const updateEmployee = () => {
                         res.forEach(({ title }) => {
                             choicesArray.push(title);
                         })
-                        return choicesArray
+                        return choicesArray;
                     },
                 },
             ]).then((answers) => {
@@ -297,6 +298,54 @@ const updateEmployee = () => {
                         if (err)
                             throw err;
                         console.log(`${res.affectedRows} updated!\n`);
+                        init();
+                    });
+                console.log('---------------------------------');
+
+            });
+
+    });
+
+}
+
+const deleteEmployee= () => {
+    client.query("SELECT first_name, Concat(first_name, ' ', last_name) FROM employee", (err, res) => {
+        if (err) throw err;
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    message: 'Which employee would you like to delete',
+                    name: 'delete',
+                    choices() {
+                        const nameArray = [];
+                        res.forEach(({ manager}) => {
+                            nameArray.push(manager);
+                        })
+                        return nameArray;
+                    },
+                },
+
+            ]).then((answers) => {
+                let chosenItem;
+                res.forEach((item) => {
+                    if (item.manager === answers.delete) {
+                        chosenItem = item.first_name;
+                    }
+                })
+                console.log(chosenItem);
+                const query = client.query(
+                    'Delete FROM employee WHERE ?',
+                    [
+                        {
+                            first_name: chosenItem,
+                        },
+                    ],
+                    (err, res) => {
+                        if (err)
+                            throw err;
+                        console.log(`${res.affectedRows} deleted!\n`);
                         init();
                     });
                 console.log('---------------------------------');
