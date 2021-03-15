@@ -309,9 +309,9 @@ const updateEmployee = () => {
 }
 
 const deleteEmployee= () => {
-    client.query("SELECT first_name, Concat(first_name, ' ', last_name) FROM employee", (err, res) => {
+    client.query("SELECT first_name, Concat(first_name, ' ', last_name) manager FROM employee", 
+    (err, res) => {
         if (err) throw err;
-
         inquirer
             .prompt([
                 {
@@ -337,11 +337,9 @@ const deleteEmployee= () => {
                 console.log(chosenItem);
                 const query = client.query(
                     'Delete FROM employee WHERE ?',
-                    [
                         {
                             first_name: chosenItem,
                         },
-                    ],
                     (err, res) => {
                         if (err)
                             throw err;
