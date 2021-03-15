@@ -16,7 +16,7 @@ const init = () => {
                 type: 'list',
                 name: 'action',
                 message: 'What would you like to do?',
-                choices: ['View all employees', 'View all departments', 'View all roles', 'Add employee', 'Add department', 'Add role', 'Update employee role', 'Delete employee', 'Done']
+                choices: ['View all employees', 'View all departments', 'View all roles', 'Add employee', 'Add department', 'Add role', 'Update employee role', 'Delete employee', 'Delete department', 'Delete roll', 'Done']
             }
         ]).then((answers) => {
             switch (answers.action) {
@@ -44,6 +44,12 @@ const init = () => {
                     break;
                 case 'Delete employee':
                     deleteEmployee();
+                    break;
+                case 'Delete department':
+                    deleteDepartment();
+                    break;
+                case 'Delete roll':
+                    deleteRoll();
                     break;
                 case 'Done':
                     client.end();
@@ -307,7 +313,7 @@ const updateEmployee = () => {
     });
 
 }
-
+// delete employees
 const deleteEmployee= () => {
     client.query("SELECT first_name, Concat(first_name, ' ', last_name) manager FROM employee", 
     (err, res) => {
@@ -336,9 +342,101 @@ const deleteEmployee= () => {
                 })
                 console.log(chosenItem);
                 const query = client.query(
-                    'Delete FROM employee WHERE ?',
+                    'DELETE FROM employee WHERE ?',
                         {
                             first_name: chosenItem,
+                        },
+                    (err, res) => {
+                        if (err)
+                            throw err;
+                        console.log(`${res.affectedRows} deleted!\n`);
+                        init();
+                    });
+                console.log('---------------------------------');
+
+            });
+
+    });
+
+}
+const deleteDepartment= () => {
+    client.query("SELECT * FROM department", 
+    (err, res) => {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    message: 'Which department would you like to delete',
+                    name: 'delete',
+                    choices() {
+                        const nameArray = [];
+                        res.forEach(({name}) => {
+                            nameArray.push(name);
+                        })
+                        return nameArray;
+                    },
+                },
+
+            ]).then((answers) => {
+                let chosenItem;
+                res.forEach((item) => {
+                    if (item.name === answers.delete) {
+                        chosenItem = item.name;
+                    }
+                })
+                console.log(chosenItem);
+                const query = client.query(
+                    'DELETE FROM department WHERE ?',
+                        {
+                            name: chosenItem,
+                        },
+                    (err, res) => {
+                        if (err)
+                            throw err;
+                        console.log(`${res.affectedRows} deleted!\n`);
+                        init();
+                    });
+                console.log('---------------------------------');
+
+            });
+
+    });
+
+};
+
+// deleted rolls
+const deleteRoll= () => {
+    client.query("SELECT * FROM role", 
+    (err, res) => {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    message: 'Which roll would you like to delete?',
+                    name: 'delete',
+                    choices() {
+                        const nameArray = [];
+                        res.forEach(({title}) => {
+                            nameArray.push(title);
+                        })
+                        return nameArray;
+                    },
+                },
+
+            ]).then((answers) => {
+                let chosenItem;
+                res.forEach((item) => {
+                    if (item.title === answers.delete) {
+                        chosenItem = item.title;
+                    }
+                })
+                console.log(chosenItem);
+                const query = client.query(
+                    'DELETE FROM roll WHERE ?',
+                        {
+                            title: chosenItem,
                         },
                     (err, res) => {
                         if (err)
