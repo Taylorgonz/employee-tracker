@@ -16,7 +16,7 @@ const init = () => {
                 type: 'list',
                 name: 'action',
                 message: 'What would you like to do?',
-                choices: ['View all employees', 'View all departments', 'View all roles', 'Add employee', 'Add department', 'Add role', 'Update employee role', 'Delete employee', 'Delete department', 'Delete roll', 'Done']
+                choices: ['View all employees', 'View all departments', 'View all roles', 'Add employee', 'Add department', 'Add role', 'Update employee role', 'Delete employee', 'Delete department', 'Delete role', 'Done']
             }
         ]).then((answers) => {
             switch (answers.action) {
@@ -48,8 +48,8 @@ const init = () => {
                 case 'Delete department':
                     deleteDepartment();
                     break;
-                case 'Delete roll':
-                    deleteRoll();
+                case 'Delete role':
+                    deleteRole();
                     break;
                 case 'Done':
                     client.end();
@@ -405,8 +405,8 @@ const deleteDepartment= () => {
 
 };
 
-// deleted rolls
-const deleteRoll= () => {
+// deleted roles
+const deleteRole= () => {
     client.query("SELECT * FROM role", 
     (err, res) => {
         if (err) throw err;
@@ -414,7 +414,7 @@ const deleteRoll= () => {
             .prompt([
                 {
                     type: 'list',
-                    message: 'Which roll would you like to delete?',
+                    message: 'Which role would you like to delete?',
                     name: 'delete',
                     choices() {
                         const nameArray = [];
@@ -434,7 +434,7 @@ const deleteRoll= () => {
                 })
                 console.log(chosenItem);
                 const query = client.query(
-                    'DELETE FROM roll WHERE ?',
+                    'DELETE FROM role WHERE ?',
                         {
                             title: chosenItem,
                         },
